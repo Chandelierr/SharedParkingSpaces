@@ -1,7 +1,17 @@
 package graduationdesign.sharedparkingspaces;
 
+import android.Manifest;
+import android.content.Context;
+import android.content.pm.PackageManager;
+import android.location.Location;
+import android.location.LocationManager;
 import android.os.Bundle;
+import android.support.v4.app.ActivityCompat;
 import android.support.v7.app.AppCompatActivity;
+import android.util.Log;
+import android.view.View;
+import android.widget.ImageButton;
+import android.widget.Toast;
 
 import com.baidu.location.BDAbstractLocationListener;
 import com.baidu.location.BDLocation;
@@ -22,8 +32,11 @@ public class MainActivity extends AppCompatActivity {
     private LocationClient mLocationClient = null;
     private BaiduMap mBaiduMap = null;
     private boolean mFirstLocation;
-//    private BitmapDescriptor mCurrentMarker;
+    private LocationManager mLocManager;
+    //    private BitmapDescriptor mCurrentMarker;
     private MyLocationConfiguration mLocationConfig;
+    private ImageButton mReLoc;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -38,7 +51,59 @@ public class MainActivity extends AppCompatActivity {
 
     private void initView() {
         mMapView = (MapView) findViewById(R.id.bmapView);
+        mReLoc = (ImageButton) findViewById(R.id.reLoc);
+        mReLoc.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Location location = getLocation();
+                if (location != null) {
+                    LatLng xy = new LatLng(location.getLatitude(), location.getLongitude());
+                    //描述地图状态将要发生变化  设置地图新中心点
+                    MapStatusUpdate status = MapStatusUpdateFactory.newLatLng(xy);
+                    //以动画方式更新地图状态，动画耗时 300 ms
+                    mBaiduMap.animateMapStatus(status);
+                }
+            }
+        });
     }
+
+    private BDAbstractLocationListener mLocListener = new BDAbstractLocationListener() {
+        /**
+         * 定位请求回调函数
+         * @param bdLocation
+         */
+        @Override
+        public void onReceiveLocation(BDLocation bdLocation) {
+            // map view 销毁后不在处理新接收的位置
+            if (bdLocation == null || mMapView == null)
+                return;
+            // 构造定位数据
+            MyLocationData locData = new MyLocationData.Builder()
+                    //定位精度
+                    .accuracy(bdLocation.getRadius())
+                    // 此处设置开发者获取到的方向信息，顺时针0-360
+                    .direction(100)
+                    //百度纬度
+                    .latitude(bdLocation.getLatitude())
+                    //百度经度
+                    .longitude(bdLocation.getLongitude())
+                    .build();
+            // 设置定位数据
+            mBaiduMap.setMyLocationData(locData);
+            Log.d("MainActivity", "Baidu纬度: " + bdLocation.getLatitude() + "\nBaidu经度: " + bdLocation.getLongitude());
+
+            // 第一次定位时，将地图位置移动到当前位置
+            if (mFirstLocation) {
+                mFirstLocation = false;
+                //地理坐标基本数据结构
+                LatLng xy = new LatLng(bdLocation.getLatitude(), bdLocation.getLongitude());
+                //描述地图状态将要发生变化  设置地图新中心点
+                MapStatusUpdate status = MapStatusUpdateFactory.newLatLng(xy);
+                //以动画方式更新地图状态，动画耗时 300 ms
+                mBaiduMap.animateMapStatus(status);
+            }
+        }
+    };
 
     private void initData() {
         mBaiduMap = mMapView.getMap();
@@ -61,7 +126,7 @@ public class MainActivity extends AppCompatActivity {
         //设置坐标类型 取值有3个： 返回国测局经纬度坐标系：gcj02 返回百度墨卡托坐标系 ：bd09 返回百度经纬度坐标系 ：bd09ll
         option.setCoorType("bd09ll");
         //设置扫描间隔，单位是ms
-        option.setScanSpan(1000);
+        option.setScanSpan(30000);
         mLocationClient.setLocOption(option);
 
         //设置自定义图标 太丑了
@@ -71,43 +136,35 @@ public class MainActivity extends AppCompatActivity {
                 MyLocationConfiguration.LocationMode.FOLLOWING, true, null);
         mBaiduMap.setMyLocationConfiguration(mLocationConfig);
 
-        mLocationClient.registerLocationListener(new BDAbstractLocationListener() {
-            /**
-             * 定位请求回调函数
-             * @param bdLocation
-             */
-            @Override
-            public void onReceiveLocation(BDLocation bdLocation) {
-                // map view 销毁后不在处理新接收的位置
-                if (bdLocation == null || mMapView == null)
-                    return;
-                // 构造定位数据
-                MyLocationData locData = new MyLocationData.Builder()
-                        //定位精度
-                        .accuracy(bdLocation.getRadius())
-                        // 此处设置开发者获取到的方向信息，顺时针0-360
-                        .direction(100)
-                        //百度维度
-                        .latitude(bdLocation.getLatitude())
-                        //百度精度
-                        .longitude(bdLocation.getLongitude())
-                        .build();
-                // 设置定位数据
-                mBaiduMap.setMyLocationData(locData);
+        mLocationClient.registerLocationListener(mLocListener);
+    }
 
-                // 第一次定位时，将地图位置移动到当前位置
-                if (mFirstLocation)
-                {
-                    mFirstLocation = false;
-                    //地理坐标基本数据结构
-                    LatLng xy = new LatLng(bdLocation.getLatitude(), bdLocation.getLongitude());
-                    //描述地图状态将要发生变化  设置地图新中心点
-                    MapStatusUpdate status = MapStatusUpdateFactory.newLatLng(xy);
-                    //以动画方式更新地图状态，动画耗时 300 ms
-                    mBaiduMap.animateMapStatus(status);
-                }
+    /**
+     * 通过网络和GPS获取位置信息
+     * @return
+     */
+    private Location getLocation() {
+        Location location;
+        mLocManager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
+        if (mLocManager.isProviderEnabled(LocationManager.GPS_PROVIDER)) {
+            if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION)
+                    != PackageManager.PERMISSION_GRANTED
+                    && ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION)
+                    != PackageManager.PERMISSION_GRANTED) {
+                return null;
             }
-        });
+            location = mLocManager.getLastKnownLocation(LocationManager.GPS_PROVIDER);
+        } else if (mLocManager.isProviderEnabled(LocationManager.NETWORK_PROVIDER)) {
+            location = mLocManager.getLastKnownLocation(LocationManager.NETWORK_PROVIDER);
+        } else {
+            Toast.makeText(this, "请检查网络或GPS是否打开", Toast.LENGTH_SHORT).show();
+            return null;
+        }
+
+        if (location != null){
+            Log.d("MainActivity", "GPS纬度: " + location.getLatitude() + "\nGPS经度: " + location.getLongitude());
+        }
+        return location;
     }
 
 
