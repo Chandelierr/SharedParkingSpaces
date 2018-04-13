@@ -1,17 +1,11 @@
 package graduationdesign.sharedparkingspaces;
 
-import android.Manifest;
 import android.content.Context;
-import android.content.pm.PackageManager;
-import android.location.Location;
-import android.location.LocationManager;
 import android.os.Bundle;
-import android.support.v4.app.ActivityCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.view.View;
 import android.widget.ImageButton;
-import android.widget.Toast;
 
 import com.baidu.location.BDAbstractLocationListener;
 import com.baidu.location.BDLocation;
@@ -19,22 +13,36 @@ import com.baidu.location.LocationClient;
 import com.baidu.location.LocationClientOption;
 import com.baidu.mapapi.SDKInitializer;
 import com.baidu.mapapi.map.BaiduMap;
+import com.baidu.mapapi.map.BitmapDescriptor;
+import com.baidu.mapapi.map.BitmapDescriptorFactory;
 import com.baidu.mapapi.map.MapStatusUpdate;
 import com.baidu.mapapi.map.MapStatusUpdateFactory;
 import com.baidu.mapapi.map.MapView;
+import com.baidu.mapapi.map.MarkerOptions;
 import com.baidu.mapapi.map.MyLocationConfiguration;
 import com.baidu.mapapi.map.MyLocationData;
+import com.baidu.mapapi.map.OverlayOptions;
 import com.baidu.mapapi.model.LatLng;
 
-public class MainActivity extends AppCompatActivity {
+import java.util.ArrayList;
+import java.util.List;
+
+import graduationdesign.sharedparkingspaces.presenter.MainPresenter;
+import graduationdesign.sharedparkingspaces.view.IView;
+
+public class MainActivity extends AppCompatActivity implements IView{
+    private static final String TAG = "MainActivity";
+
+    private MainPresenter mPresenter;
+
     private MapView mMapView = null;
 //    定位服务的客户端。宿主程序在客户端声明此类，并调用，目前只支持在主线程中启动
     private LocationClient mLocationClient = null;
     private BaiduMap mBaiduMap = null;
     private boolean mFirstLocation;
-    private LocationManager mLocManager;
-    //    private BitmapDescriptor mCurrentMarker;
     private MyLocationConfiguration mLocationConfig;
+    private BDLocation mCurrentLocation;
+
     private ImageButton mReLoc;
 
 
@@ -45,8 +53,13 @@ public class MainActivity extends AppCompatActivity {
         //注意该方法要再setContentView方法之前实现
         SDKInitializer.initialize(getApplicationContext());
         setContentView(R.layout.activity_main);
+        initPresenter();
         initView();
         initData();
+    }
+
+    private void initPresenter() {
+        mPresenter = new MainPresenter(this);
     }
 
     private void initView() {
@@ -55,9 +68,11 @@ public class MainActivity extends AppCompatActivity {
         mReLoc.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                Location location = getLocation();
-                if (location != null) {
-                    LatLng xy = new LatLng(location.getLatitude(), location.getLongitude());
+                //有时会失败
+//                Location location = mPresenter.getLocation();
+                Log.d(TAG, "bdLocation is null: " + (mCurrentLocation == null));
+                if (mCurrentLocation != null) {
+                    LatLng xy = new LatLng(mCurrentLocation.getLatitude(), mCurrentLocation.getLongitude());
                     //描述地图状态将要发生变化  设置地图新中心点
                     MapStatusUpdate status = MapStatusUpdateFactory.newLatLng(xy);
                     //以动画方式更新地图状态，动画耗时 300 ms
@@ -77,6 +92,7 @@ public class MainActivity extends AppCompatActivity {
             // map view 销毁后不在处理新接收的位置
             if (bdLocation == null || mMapView == null)
                 return;
+            mCurrentLocation = bdLocation;
             // 构造定位数据
             MyLocationData locData = new MyLocationData.Builder()
                     //定位精度
@@ -90,7 +106,7 @@ public class MainActivity extends AppCompatActivity {
                     .build();
             // 设置定位数据
             mBaiduMap.setMyLocationData(locData);
-            Log.d("MainActivity", "Baidu纬度: " + bdLocation.getLatitude() + "\nBaidu经度: " + bdLocation.getLongitude());
+            Log.d(TAG, "Baidu纬度: " + bdLocation.getLatitude() + "\nBaidu经度: " + bdLocation.getLongitude());
 
             // 第一次定位时，将地图位置移动到当前位置
             if (mFirstLocation) {
@@ -102,6 +118,9 @@ public class MainActivity extends AppCompatActivity {
                 //以动画方式更新地图状态，动画耗时 300 ms
                 mBaiduMap.animateMapStatus(status);
             }
+
+            //请求附近停车场
+            //mPresenter.getNearbyParkingLots();
         }
     };
 
@@ -112,6 +131,7 @@ public class MainActivity extends AppCompatActivity {
         //改变地图状态
         mBaiduMap.setMapStatus(msu);
         initLocation();
+        initMarkers();
     }
 
     private void initLocation() {
@@ -139,32 +159,20 @@ public class MainActivity extends AppCompatActivity {
         mLocationClient.registerLocationListener(mLocListener);
     }
 
-    /**
-     * 通过网络和GPS获取位置信息
-     * @return
-     */
-    private Location getLocation() {
-        Location location;
-        mLocManager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
-        if (mLocManager.isProviderEnabled(LocationManager.GPS_PROVIDER)) {
-            if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION)
-                    != PackageManager.PERMISSION_GRANTED
-                    && ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION)
-                    != PackageManager.PERMISSION_GRANTED) {
-                return null;
-            }
-            location = mLocManager.getLastKnownLocation(LocationManager.GPS_PROVIDER);
-        } else if (mLocManager.isProviderEnabled(LocationManager.NETWORK_PROVIDER)) {
-            location = mLocManager.getLastKnownLocation(LocationManager.NETWORK_PROVIDER);
-        } else {
-            Toast.makeText(this, "请检查网络或GPS是否打开", Toast.LENGTH_SHORT).show();
-            return null;
-        }
-
-        if (location != null){
-            Log.d("MainActivity", "GPS纬度: " + location.getLatitude() + "\nGPS经度: " + location.getLongitude());
-        }
-        return location;
+    private void initMarkers(){
+        List<OverlayOptions> options = new ArrayList<>();
+        BitmapDescriptor bdA = BitmapDescriptorFactory.fromResource(R.mipmap.punctuation);
+        LatLng point1 = new LatLng(34.161472, 108.913053+0.0001);
+        LatLng point2 = new LatLng(34.161472+0.0001, 108.913053);
+        OverlayOptions option1 =  new MarkerOptions()
+                .position(point1)
+                .icon(bdA);
+        OverlayOptions option2 =  new MarkerOptions()
+                .position(point2)
+                .icon(bdA);
+        options.add(option1);
+        options.add(option2);
+        mBaiduMap.addOverlays(options);
     }
 
 
@@ -197,5 +205,12 @@ public class MainActivity extends AppCompatActivity {
         super.onPause();
         //在activity执行onPause时执行mMapView. onPause ()，实现地图生命周期管理
         mMapView.onPause();
+    }
+
+
+    //implement IView======================================================================
+    @Override
+    public Context getAppContext() {
+        return getApplicationContext();
     }
 }
