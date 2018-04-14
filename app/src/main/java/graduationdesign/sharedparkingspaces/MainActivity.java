@@ -1,11 +1,20 @@
 package graduationdesign.sharedparkingspaces;
 
 import android.content.Context;
+import android.content.Intent;
 import android.os.Bundle;
+import android.support.annotation.NonNull;
+import android.support.design.widget.NavigationView;
+import android.support.v4.widget.DrawerLayout;
+import android.support.v7.app.ActionBarDrawerToggle;
 import android.support.v7.app.AppCompatActivity;
+import android.support.v7.widget.Toolbar;
 import android.util.Log;
+import android.view.MenuItem;
 import android.view.View;
 import android.widget.ImageButton;
+import android.widget.ImageView;
+import android.widget.Toast;
 
 import com.baidu.location.BDAbstractLocationListener;
 import com.baidu.location.BDLocation;
@@ -29,8 +38,10 @@ import java.util.List;
 
 import graduationdesign.sharedparkingspaces.presenter.MainPresenter;
 import graduationdesign.sharedparkingspaces.view.IView;
+import graduationdesign.sharedparkingspaces.view.LoginActivity;
 
-public class MainActivity extends AppCompatActivity implements IView{
+public class MainActivity extends AppCompatActivity implements IView,
+        NavigationView.OnNavigationItemSelectedListener {
     private static final String TAG = "MainActivity";
 
     private MainPresenter mPresenter;
@@ -43,8 +54,20 @@ public class MainActivity extends AppCompatActivity implements IView{
     private MyLocationConfiguration mLocationConfig;
     private BDLocation mCurrentLocation;
 
+    private DrawerLayout mActivityMain;
     private ImageButton mReLoc;
+    private NavigationView mPersonalCenterNv;
+    private Toolbar mTopToolbar;
+    private View mHeaderView;
 
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        if (requestCode == LoginActivity.FROM_LOGIN_ACTIVITY) {
+            Log.d(TAG, "tel: " + data.getStringExtra("tel") + "\npassword: " + data.getStringExtra("password"));
+        }
+        super.onActivityResult(requestCode, resultCode, data);
+    }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -63,6 +86,37 @@ public class MainActivity extends AppCompatActivity implements IView{
     }
 
     private void initView() {
+        mActivityMain = (DrawerLayout) findViewById(R.id.activity_main);
+        //个人中心
+        mPersonalCenterNv = (NavigationView) findViewById(R.id.personal_center);
+        mPersonalCenterNv.setNavigationItemSelectedListener(this);
+
+        mTopToolbar = (Toolbar) findViewById(R.id.top_toolbar);
+        mTopToolbar.setNavigationIcon(R.mipmap.person);
+        mTopToolbar.setOnCreateContextMenuListener(this);
+        setSupportActionBar(mTopToolbar);
+        getSupportActionBar().setHomeButtonEnabled(true);
+        getSupportActionBar().setDisplayHomeAsUpEnabled(true);
+        ActionBarDrawerToggle toggle = new ActionBarDrawerToggle(
+                this, mActivityMain, mTopToolbar, R.string.navigation_drawer_open, R.string.navigation_drawer_close);
+        mActivityMain.setDrawerListener(toggle);
+        toggle.syncState();
+
+        //
+        mHeaderView = mPersonalCenterNv.inflateHeaderView(R.layout.header_layout);
+        ImageView headIv = (ImageView) mHeaderView.findViewById(R.id.avatar_iv);
+        headIv.setOnClickListener(new View.OnClickListener(){
+
+            @Override
+            public void onClick(View v) {
+                Toast.makeText(MainActivity.this, "head click", Toast.LENGTH_SHORT).show();
+                Intent intent = new Intent();
+                intent.setClass(MainActivity.this, LoginActivity.class);
+                startActivityForResult(intent, LoginActivity.FROM_LOGIN_ACTIVITY);
+            }
+        });
+
+        //内容
         mMapView = (MapView) findViewById(R.id.bmapView);
         mReLoc = (ImageButton) findViewById(R.id.reLoc);
         mReLoc.setOnClickListener(new View.OnClickListener() {
@@ -175,6 +229,11 @@ public class MainActivity extends AppCompatActivity implements IView{
         mBaiduMap.addOverlays(options);
     }
 
+
+    @Override
+    public boolean onNavigationItemSelected(@NonNull MenuItem item) {
+        return false;
+    }
 
     @Override
     protected void onStart() {
