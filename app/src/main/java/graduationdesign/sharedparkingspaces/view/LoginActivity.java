@@ -4,13 +4,16 @@ import android.animation.Animator;
 import android.animation.AnimatorListenerAdapter;
 import android.annotation.TargetApi;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.os.Build;
 import android.os.Bundle;
+import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.text.TextUtils;
 import android.view.View;
+import android.view.inputmethod.EditorInfo;
 import android.widget.AutoCompleteTextView;
 import android.widget.Button;
 import android.widget.EditText;
@@ -19,6 +22,7 @@ import android.widget.TextView;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import graduationdesign.sharedparkingspaces.MainActivity;
 import graduationdesign.sharedparkingspaces.R;
 import graduationdesign.sharedparkingspaces.presenter.LoginPresenter;
 
@@ -30,8 +34,8 @@ public class LoginActivity extends AppCompatActivity {
     private static final String TAG = "LoginActivity";
     private static final String PHONE_NUMBER_REG =
             "^(13[0-9]|14[579]|15[0-3,5-9]|16[6]|17[0135678]|18[0-9]|19[89])\\d{8}$";
-    public static final int SIGN_IN = 1;//1:登陆 0：注册
-    public static final int SIGN_UP = 0;
+    public static final int SIGN_IN = 10;//1:登陆 0：注册
+    public static final int SIGN_UP = 11;
     public static final int FROM_LOGIN_ACTIVITY = 1000;
 
     private int mSignIn = SIGN_IN;
@@ -44,6 +48,7 @@ public class LoginActivity extends AppCompatActivity {
     private AutoCompleteTextView mPhoneNumView;
     private EditText mPasswordView;
     private EditText mPasswordAgainView;
+    private View mPasswordAgainLayout;
     private View mProgressView;
     private View mLoginFormView;
     private Button mSignButton;
@@ -62,71 +67,6 @@ public class LoginActivity extends AppCompatActivity {
         initPresenter();
         initView();
     }
-    private ILoginView mView = new ILoginView() {
-        @Override
-        public int getSignWay() {
-            return mSignIn;
-        }
-
-        @Override
-        @TargetApi(Build.VERSION_CODES.HONEYCOMB_MR2)
-        public void showProgress(final boolean show) {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB_MR2) {
-                int shortAnimTime = getResources().getInteger(android.R.integer.config_shortAnimTime);
-
-                mLoginFormView.setVisibility(show ? View.GONE : View.VISIBLE);
-                mLoginFormView.animate().setDuration(shortAnimTime).alpha(
-                        show ? 0 : 1).setListener(new AnimatorListenerAdapter() {
-                    @Override
-                    public void onAnimationEnd(Animator animation) {
-                        mLoginFormView.setVisibility(show ? View.GONE : View.VISIBLE);
-                    }
-                });
-
-                mOtherSignWaysView.setVisibility(show ? View.GONE : View.VISIBLE);
-                mOtherSignWaysView.animate().setDuration(shortAnimTime).alpha(
-                        show ? 0 : 1).setListener(new AnimatorListenerAdapter() {
-                    @Override
-                    public void onAnimationEnd(Animator animation) {
-                        mOtherSignWaysView.setVisibility(show ? View.GONE : View.VISIBLE);
-                    }
-                });
-
-                mProgressView.setVisibility(show ? View.VISIBLE : View.GONE);
-                mProgressView.animate().setDuration(shortAnimTime).alpha(
-                        show ? 1 : 0).setListener(new AnimatorListenerAdapter() {
-                    @Override
-                    public void onAnimationEnd(Animator animation) {
-                        mProgressView.setVisibility(show ? View.VISIBLE : View.GONE);
-                    }
-                });
-            } else {
-                mProgressView.setVisibility(show ? View.VISIBLE : View.GONE);
-                mLoginFormView.setVisibility(show ? View.GONE : View.VISIBLE);
-                mOtherSignWaysView.setVisibility(show ? View.GONE : View.VISIBLE);
-            }
-        }
-
-        @Override
-        public void passwordError() {
-            mPasswordView.setError(getString(R.string.error_incorrect_password));
-            mPasswordView.requestFocus();
-        }
-
-        @Override
-        public void signSuccess() {
-            Intent intent = new Intent();
-            intent.putExtra("tel", mPhoneNum);
-            intent.putExtra("password", mPassword);
-            setResult(1,intent);
-            finish();
-        }
-
-        @Override
-        public Context getAppContext() {
-            return getApplicationContext();
-        }
-    };
 
     private void initPresenter() {
         mPresenter = new LoginPresenter();
@@ -147,8 +87,10 @@ public class LoginActivity extends AppCompatActivity {
 
         //设置登陆模块
         mPhoneNumView = (AutoCompleteTextView) findViewById(R.id.phone_num);
+        mPhoneNumView.setInputType(EditorInfo.TYPE_CLASS_PHONE);
         mPasswordView = (EditText) findViewById(R.id.password);
         mPasswordAgainView = (EditText) findViewById(R.id.password_again);
+        mPasswordAgainLayout = (View) findViewById(R.id.password_again_layout);
 
         mSignButton = (Button) findViewById(R.id.sign_in_button);
         mSignButton.setOnClickListener(new View.OnClickListener() {
@@ -248,11 +190,111 @@ public class LoginActivity extends AppCompatActivity {
 
 
     private boolean isPasswordValid(String password) {
-        return password.length() > 6;
+        return password.length() >= 6;
     }
 
     private boolean isPasswordAgainValid(String password) {
         return password.equals(mPasswordView.getText().toString());
+    }
+
+
+    private ILoginView mView = new ILoginView() {
+        @Override
+        public int getSignWay() {
+            return mSignIn;
+        }
+
+        @Override
+        @TargetApi(Build.VERSION_CODES.HONEYCOMB_MR2)
+        public void showProgress(final boolean show) {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB_MR2) {
+                int shortAnimTime = getResources().getInteger(android.R.integer.config_shortAnimTime);
+
+                mLoginFormView.setVisibility(show ? View.GONE : View.VISIBLE);
+                mLoginFormView.animate().setDuration(shortAnimTime).alpha(
+                        show ? 0 : 1).setListener(new AnimatorListenerAdapter() {
+                    @Override
+                    public void onAnimationEnd(Animator animation) {
+                        mLoginFormView.setVisibility(show ? View.GONE : View.VISIBLE);
+                    }
+                });
+
+                mOtherSignWaysView.setVisibility(show ? View.GONE : View.VISIBLE);
+                mOtherSignWaysView.animate().setDuration(shortAnimTime).alpha(
+                        show ? 0 : 1).setListener(new AnimatorListenerAdapter() {
+                    @Override
+                    public void onAnimationEnd(Animator animation) {
+                        mOtherSignWaysView.setVisibility(show ? View.GONE : View.VISIBLE);
+                    }
+                });
+
+                mProgressView.setVisibility(show ? View.VISIBLE : View.GONE);
+                mProgressView.animate().setDuration(shortAnimTime).alpha(
+                        show ? 1 : 0).setListener(new AnimatorListenerAdapter() {
+                    @Override
+                    public void onAnimationEnd(Animator animation) {
+                        mProgressView.setVisibility(show ? View.VISIBLE : View.GONE);
+                    }
+                });
+            } else {
+                mProgressView.setVisibility(show ? View.VISIBLE : View.GONE);
+                mLoginFormView.setVisibility(show ? View.GONE : View.VISIBLE);
+                mOtherSignWaysView.setVisibility(show ? View.GONE : View.VISIBLE);
+            }
+        }
+
+        @Override
+        public void signSuccess() {
+            Intent intent = new Intent(LoginActivity.this, MainActivity.class);
+            if (mSignIn == SIGN_IN) {
+                setResult(SIGN_IN,intent);
+            } else {
+                setResult(SIGN_UP,intent);
+            }
+            finish();
+        }
+
+        @Override
+        public void signResult(final int result) {
+            AlertDialog.Builder builder = new AlertDialog.Builder(LoginActivity.this);
+            builder.setTitle(mSignIn == SIGN_IN ? R.string.sign_in_result: R.string.sign_up_result)
+                    .setMessage(mPresenter.judgeSignResultByCode(result))
+                    .setNegativeButton(R.string.back, new DialogInterface.OnClickListener() {
+                        @Override
+                        public void onClick(DialogInterface dialog, int which) {
+                            finish();
+                        }
+                    })
+                    .setPositiveButton(mPresenter.judgePositiveByCode(result), new DialogInterface.OnClickListener() {
+                        @Override
+                        public void onClick(DialogInterface dialog, int which) {
+                            if ((mSignIn == SIGN_IN && (result == -1 || result == 2)) ||
+                                    (mSignIn == SIGN_UP && result == 1)){
+                                initView();
+                                mPasswordView.setText("");
+                                mPasswordAgainLayout.setVisibility(View.GONE);
+                            } else if ((mSignIn == SIGN_IN && result == 1) ||
+                                    mSignIn == SIGN_UP && (result != 1)) {
+                                changeSignUpStatus();
+                            }
+                        }
+                    });
+            builder.create().show();
+        }
+
+        @Override
+        public Context getAppContext() {
+            return getApplicationContext();
+        }
+    };
+
+    public interface ILoginView extends IView{
+        int getSignWay();
+        void showProgress(boolean isShow);
+
+        void signSuccess();
+
+        void signResult(int result);
     }
 
 }

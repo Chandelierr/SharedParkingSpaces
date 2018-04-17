@@ -1,12 +1,14 @@
 package graduationdesign.sharedparkingspaces;
 
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.design.widget.NavigationView;
 import android.support.v4.widget.DrawerLayout;
 import android.support.v7.app.ActionBarDrawerToggle;
+import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.util.Log;
@@ -14,6 +16,7 @@ import android.view.MenuItem;
 import android.view.View;
 import android.widget.ImageButton;
 import android.widget.ImageView;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import com.baidu.location.BDAbstractLocationListener;
@@ -36,15 +39,21 @@ import com.baidu.mapapi.model.LatLng;
 import java.util.ArrayList;
 import java.util.List;
 
+import graduationdesign.sharedparkingspaces.model.Subscriber;
+import graduationdesign.sharedparkingspaces.presenter.IMainPresenter;
 import graduationdesign.sharedparkingspaces.presenter.MainPresenter;
 import graduationdesign.sharedparkingspaces.view.IView;
 import graduationdesign.sharedparkingspaces.view.LoginActivity;
 
-public class MainActivity extends AppCompatActivity implements IView,
+import static graduationdesign.sharedparkingspaces.view.LoginActivity.SIGN_IN;
+import static graduationdesign.sharedparkingspaces.view.LoginActivity.SIGN_UP;
+
+public class MainActivity extends AppCompatActivity implements
         NavigationView.OnNavigationItemSelectedListener {
     private static final String TAG = "MainActivity";
 
-    private MainPresenter mPresenter;
+    private IMainPresenter mPresenter;
+    private Subscriber mUser;
 
     private MapView mMapView = null;
 //    定位服务的客户端。宿主程序在客户端声明此类，并调用，目前只支持在主线程中启动
@@ -59,12 +68,16 @@ public class MainActivity extends AppCompatActivity implements IView,
     private NavigationView mPersonalCenterNv;
     private Toolbar mTopToolbar;
     private View mHeaderView;
+    private TextView mUserName;
 
 
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         if (requestCode == LoginActivity.FROM_LOGIN_ACTIVITY) {
-            Log.d(TAG, "tel: " + data.getStringExtra("tel") + "\npassword: " + data.getStringExtra("password"));
+            Log.d(TAG, "result code: " + resultCode);
+            if (resultCode == SIGN_IN || resultCode == SIGN_UP) {
+                mPresenter.getUser();
+            }
         }
         super.onActivityResult(requestCode, resultCode, data);
     }
@@ -82,7 +95,8 @@ public class MainActivity extends AppCompatActivity implements IView,
     }
 
     private void initPresenter() {
-        mPresenter = new MainPresenter(this);
+        mPresenter = new MainPresenter();
+        mPresenter.setView(mView);
     }
 
     private void initView() {
@@ -104,15 +118,35 @@ public class MainActivity extends AppCompatActivity implements IView,
 
         //
         mHeaderView = mPersonalCenterNv.inflateHeaderView(R.layout.header_layout);
+        mUserName = (TextView) mHeaderView.findViewById(R.id.user_name_tv);
         ImageView headIv = (ImageView) mHeaderView.findViewById(R.id.avatar_iv);
         headIv.setOnClickListener(new View.OnClickListener(){
 
             @Override
             public void onClick(View v) {
                 Toast.makeText(MainActivity.this, "head click", Toast.LENGTH_SHORT).show();
-                Intent intent = new Intent();
-                intent.setClass(MainActivity.this, LoginActivity.class);
-                startActivityForResult(intent, LoginActivity.FROM_LOGIN_ACTIVITY);
+                if (mUser == null) {
+                    Intent intent = new Intent();
+                    intent.setClass(MainActivity.this, LoginActivity.class);
+                    startActivityForResult(intent, LoginActivity.FROM_LOGIN_ACTIVITY);
+                } else {
+                    final AlertDialog.Builder builder = new AlertDialog.Builder(MainActivity.this);
+                    builder.setMessage(R.string.sign_out)
+                            .setNegativeButton(R.string.no, new DialogInterface.OnClickListener() {
+                                @Override
+                                public void onClick(DialogInterface dialog, int which) {
+                                    builder.create().cancel();
+                                }
+                            })
+                            .setPositiveButton(R.string.yes, new DialogInterface.OnClickListener() {
+                                @Override
+                                public void onClick(DialogInterface dialog, int which) {
+                                    mUser = null;
+                                    mUserName.setText(R.string.please_login);
+                                }
+                            })
+                            .create().show();
+                }
             }
         });
 
@@ -268,8 +302,24 @@ public class MainActivity extends AppCompatActivity implements IView,
 
 
     //implement IView======================================================================
-    @Override
-    public Context getAppContext() {
-        return getApplicationContext();
+
+    public interface IMainView extends IView{
+
+        void setUser(Subscriber subscriber);
     }
+    private IMainView mView = new IMainView() {
+        @Override
+        public void setUser(Subscriber subscriber) {
+            mUser = subscriber;
+            Log.d(TAG, "user: " + subscriber);
+            mUserName.setText(mUser.getUserName());
+        }
+
+        @Override
+        public Context getAppContext() {
+            return getApplicationContext();
+        }
+    };
+
 }
+
