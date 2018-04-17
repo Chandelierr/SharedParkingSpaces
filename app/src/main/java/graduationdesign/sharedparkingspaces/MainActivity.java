@@ -46,9 +46,11 @@ import graduationdesign.sharedparkingspaces.presenter.IMainPresenter;
 import graduationdesign.sharedparkingspaces.presenter.MainPresenter;
 import graduationdesign.sharedparkingspaces.view.IView;
 import graduationdesign.sharedparkingspaces.view.LoginActivity;
+import graduationdesign.sharedparkingspaces.view.UserInfoActivity;
 
 import static graduationdesign.sharedparkingspaces.view.LoginActivity.SIGN_IN;
 import static graduationdesign.sharedparkingspaces.view.LoginActivity.SIGN_UP;
+import static graduationdesign.sharedparkingspaces.view.UserInfoActivity.FROM_USER_INFO_ACTIVITY;
 
 public class MainActivity extends RxAppCompatActivity implements
         NavigationView.OnNavigationItemSelectedListener {
@@ -220,6 +222,27 @@ public class MainActivity extends RxAppCompatActivity implements
         MapStatusUpdate msu = MapStatusUpdateFactory.zoomTo(15f);
         //改变地图状态
         mBaiduMap.setMapStatus(msu);
+        mBaiduMap.setOnMarkerClickListener(new BaiduMap.OnMarkerClickListener() {
+            @Override
+            public boolean onMarkerClick(Marker marker) {
+                AlertDialog.Builder builder = new AlertDialog.Builder(MainActivity.this);
+                builder.setMessage(marker.getTitle())
+                        .setNegativeButton(R.string.back, new DialogInterface.OnClickListener() {
+                            @Override
+                            public void onClick(DialogInterface dialog, int which) {
+                                dialog.dismiss();
+                            }
+                        })
+                        .setPositiveButton(R.string.reserve, new DialogInterface.OnClickListener() {
+                            @Override
+                            public void onClick(DialogInterface dialog, int which) {
+                                Toast.makeText(MainActivity.this, "正在开发中", Toast.LENGTH_SHORT).show();
+                                dialog.dismiss();
+                            }
+                        }).create().show();
+                return false;
+            }
+        });
         initLocation();
 //        initMarkers();
     }
@@ -268,6 +291,12 @@ public class MainActivity extends RxAppCompatActivity implements
 
     @Override
     public boolean onNavigationItemSelected(@NonNull MenuItem item) {
+        switch (item.getItemId()) {
+            case R.id.user_info:
+                Intent intent = new Intent(this, UserInfoActivity.class);
+                intent.putExtra("user", mUser);
+                startActivityForResult(intent, FROM_USER_INFO_ACTIVITY);
+        }
         return false;
     }
 
@@ -343,27 +372,6 @@ public class MainActivity extends RxAppCompatActivity implements
                 }
                 ((Marker)mBaiduMap.addOverlay(option)).setTitle(lot.getParking_name());
             }
-            mBaiduMap.setOnMarkerClickListener(new BaiduMap.OnMarkerClickListener() {
-                @Override
-                public boolean onMarkerClick(Marker marker) {
-                    final AlertDialog.Builder builder = new AlertDialog.Builder(MainActivity.this);
-                    builder.setMessage(marker.getTitle())
-                            .setNegativeButton(R.string.back, new DialogInterface.OnClickListener() {
-                                @Override
-                                public void onClick(DialogInterface dialog, int which) {
-                                    dialog.dismiss();
-                                }
-                            })
-                            .setPositiveButton(R.string.reserve, new DialogInterface.OnClickListener() {
-                                @Override
-                                public void onClick(DialogInterface dialog, int which) {
-                                    Toast.makeText(MainActivity.this, "正在开发中", Toast.LENGTH_SHORT).show();
-                                    dialog.dismiss();
-                                }
-                            }).create().show();
-                    return false;
-                }
-            });
         }
 
         @Override

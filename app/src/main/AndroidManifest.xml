@@ -37,7 +37,9 @@
     <!-- To auto-complete the email text field in the login form with the user's emails -->
     <uses-permission android:name="android.permission.GET_ACCOUNTS" />
     <uses-permission android:name="android.permission.READ_PROFILE" />
-    <uses-permission android:name="android.permission.READ_CONTACTS" /> <!-- 不知道什么权限，先去掉 -->
+    <uses-permission android:name="android.permission.READ_CONTACTS" />
+
+    <!-- 不知道什么权限，先去掉 -->
     <!-- <uses-permission android:name="android.permission.WAKE_LOCK" /> -->
     <application
         android:allowBackup="true"
@@ -60,11 +62,12 @@
         <service
             android:name="com.baidu.location.f"
             android:enabled="true"
-            android:process=":remote"></service>
+            android:process=":remote" />
 
         <activity
             android:name=".view.LoginActivity"
-            android:label="@string/title_activity_login"></activity>
+            android:label="@string/title_activity_login" />
+        <activity android:name=".view.UserInfoActivity"></activity>
     </application>
 
 </manifest>

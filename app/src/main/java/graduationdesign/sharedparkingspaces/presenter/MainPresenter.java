@@ -15,9 +15,6 @@ import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
 import com.baidu.location.BDLocation;
 
-import java.io.ByteArrayInputStream;
-import java.io.IOException;
-import java.io.ObjectInputStream;
 import java.util.List;
 
 import graduationdesign.sharedparkingspaces.MainActivity;
@@ -34,6 +31,8 @@ import io.reactivex.disposables.Disposable;
 import io.reactivex.functions.Consumer;
 import io.reactivex.functions.Function;
 import io.reactivex.schedulers.Schedulers;
+
+import static graduationdesign.sharedparkingspaces.util.SerialUtil.deSerialUser;
 
 /**
  * Created by wangmengjie on 2018/4/13.
@@ -175,26 +174,5 @@ public class MainPresenter implements IMainPresenter{
         }
     }
 
-    private Subscriber deSerialUser(String deSerial) {
-        long startTime = System.currentTimeMillis();
-        String redStr = null;
-        Subscriber user = null;
-        try {
-            redStr = java.net.URLDecoder.decode(deSerial, "UTF-8");
-            ByteArrayInputStream byteArrayInputStream = new ByteArrayInputStream(
-                    redStr.getBytes("ISO-8859-1"));
-            ObjectInputStream objectInputStream = new ObjectInputStream(
-                    byteArrayInputStream);
-            user = (Subscriber) objectInputStream.readObject();
-            objectInputStream.close();
-            byteArrayInputStream.close();
-        }  catch (IOException e) {
-            e.printStackTrace();
-        } catch (ClassNotFoundException e) {
-            e.printStackTrace();
-        }
-        long endTime = System.currentTimeMillis();
-        Log.d(TAG, "反序列化耗时为:" + (endTime - startTime));
-        return user;
-    }
+
 }
