@@ -43,4 +43,6 @@
     <string name="sign_out">退出登录</string>
     <string name="no">否</string>
     <string name="yes">是</string>
+    <string name="reserve">预定</string>
+    <string name="get_lots_error">获取停车场错误</string>
 </resources>

@@ -9,7 +9,6 @@ import android.support.design.widget.NavigationView;
 import android.support.v4.widget.DrawerLayout;
 import android.support.v7.app.ActionBarDrawerToggle;
 import android.support.v7.app.AlertDialog;
-import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.util.Log;
 import android.view.MenuItem;
@@ -30,15 +29,18 @@ import com.baidu.mapapi.map.BitmapDescriptorFactory;
 import com.baidu.mapapi.map.MapStatusUpdate;
 import com.baidu.mapapi.map.MapStatusUpdateFactory;
 import com.baidu.mapapi.map.MapView;
+import com.baidu.mapapi.map.Marker;
 import com.baidu.mapapi.map.MarkerOptions;
 import com.baidu.mapapi.map.MyLocationConfiguration;
 import com.baidu.mapapi.map.MyLocationData;
 import com.baidu.mapapi.map.OverlayOptions;
 import com.baidu.mapapi.model.LatLng;
+import com.trello.rxlifecycle2.components.support.RxAppCompatActivity;
 
 import java.util.ArrayList;
 import java.util.List;
 
+import graduationdesign.sharedparkingspaces.model.ParkingLot;
 import graduationdesign.sharedparkingspaces.model.Subscriber;
 import graduationdesign.sharedparkingspaces.presenter.IMainPresenter;
 import graduationdesign.sharedparkingspaces.presenter.MainPresenter;
@@ -48,7 +50,7 @@ import graduationdesign.sharedparkingspaces.view.LoginActivity;
 import static graduationdesign.sharedparkingspaces.view.LoginActivity.SIGN_IN;
 import static graduationdesign.sharedparkingspaces.view.LoginActivity.SIGN_UP;
 
-public class MainActivity extends AppCompatActivity implements
+public class MainActivity extends RxAppCompatActivity implements
         NavigationView.OnNavigationItemSelectedListener {
     private static final String TAG = "MainActivity";
 
@@ -208,7 +210,7 @@ public class MainActivity extends AppCompatActivity implements
             }
 
             //请求附近停车场
-            //mPresenter.getNearbyParkingLots();
+            mPresenter.getNearbyParkingLots(bdLocation);
         }
     };
 
@@ -219,7 +221,7 @@ public class MainActivity extends AppCompatActivity implements
         //改变地图状态
         mBaiduMap.setMapStatus(msu);
         initLocation();
-        initMarkers();
+//        initMarkers();
     }
 
     private void initLocation() {
@@ -286,6 +288,7 @@ public class MainActivity extends AppCompatActivity implements
         //在activity执行onDestroy时执行mMapView.onDestroy()，实现地图生命周期管理
         mMapView.onDestroy();
         mMapView = null;
+        mPresenter.dispose();
     }
     @Override
     protected void onResume() {
@@ -306,6 +309,8 @@ public class MainActivity extends AppCompatActivity implements
     public interface IMainView extends IView{
 
         void setUser(Subscriber subscriber);
+        void setMarkers(List<ParkingLot> lots);
+        void getLotsError();
     }
     private IMainView mView = new IMainView() {
         @Override
@@ -313,6 +318,57 @@ public class MainActivity extends AppCompatActivity implements
             mUser = subscriber;
             Log.d(TAG, "user: " + subscriber);
             mUserName.setText(mUser.getUserName());
+        }
+
+        @Override
+        public void setMarkers(List<ParkingLot> lots) {
+            if (lots == null) {
+                return;
+            }
+//            List<OverlayOptions> options = new ArrayList<>(lots.size());
+
+            BitmapDescriptor bdFree = BitmapDescriptorFactory.fromResource(R.mipmap.free_60);
+            BitmapDescriptor bdUnusable = BitmapDescriptorFactory.fromResource(R.mipmap.unusable);
+            for (ParkingLot lot: lots) {//
+                Log.d(TAG, lot.toString());
+                OverlayOptions option;
+                if (lot.getUsed() == 1) {
+                    option = new MarkerOptions()
+                            .position(new LatLng(lot.getLat(), lot.getLng()))
+                            .icon(bdFree);
+                } else {
+                    option = new MarkerOptions()
+                            .position(new LatLng(lot.getLat(), lot.getLng()))
+                            .icon(bdUnusable);
+                }
+                ((Marker)mBaiduMap.addOverlay(option)).setTitle(lot.getParking_name());
+            }
+            mBaiduMap.setOnMarkerClickListener(new BaiduMap.OnMarkerClickListener() {
+                @Override
+                public boolean onMarkerClick(Marker marker) {
+                    final AlertDialog.Builder builder = new AlertDialog.Builder(MainActivity.this);
+                    builder.setMessage(marker.getTitle())
+                            .setNegativeButton(R.string.back, new DialogInterface.OnClickListener() {
+                                @Override
+                                public void onClick(DialogInterface dialog, int which) {
+                                    dialog.dismiss();
+                                }
+                            })
+                            .setPositiveButton(R.string.reserve, new DialogInterface.OnClickListener() {
+                                @Override
+                                public void onClick(DialogInterface dialog, int which) {
+                                    Toast.makeText(MainActivity.this, "正在开发中", Toast.LENGTH_SHORT).show();
+                                    dialog.dismiss();
+                                }
+                            }).create().show();
+                    return false;
+                }
+            });
+        }
+
+        @Override
+        public void getLotsError() {
+            Toast.makeText(MainActivity.this, getResources().getString(R.string.get_lots_error), Toast.LENGTH_SHORT).show();
         }
 
         @Override

@@ -3,6 +3,7 @@ package graduationdesign.sharedparkingspaces.presenter;
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.os.AsyncTask;
+import android.text.TextUtils;
 import android.util.Log;
 
 import com.alibaba.fastjson.JSON;
@@ -12,6 +13,8 @@ import com.alibaba.fastjson.JSONObject;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.ObjectOutputStream;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 
 import graduationdesign.sharedparkingspaces.R;
 import graduationdesign.sharedparkingspaces.model.Subscriber;
@@ -70,7 +73,7 @@ public class LoginPresenter implements ILoginPresenter{
             try {
                 String content = "{" +
                         "\"tel\":" + "\"" + mPhoneNum + "\"" + "," +
-                        "\"password\":" + "\"" + mPassword + "\"" +
+                        "\"password\":" + "\"" + md5(mPassword) + "\"" +
                         "}";
                 String url;
                 if (mView.getSignWay() == SIGN_IN) {
@@ -198,6 +201,29 @@ public class LoginPresenter implements ILoginPresenter{
             }
         }
         return 0;
+    }
+
+    public static String md5(String string) {
+        if (TextUtils.isEmpty(string)) {
+            return "";
+        }
+        MessageDigest md5 = null;
+        try {
+            md5 = MessageDigest.getInstance("MD5");
+            byte[] bytes = md5.digest(string.getBytes());
+            String result = "";
+            for (byte b : bytes) {
+                String temp = Integer.toHexString(b & 0xff);
+                if (temp.length() == 1) {
+                    temp = "0" + temp;
+                }
+                result += temp;
+            }
+            return result;
+        } catch (NoSuchAlgorithmException e) {
+            e.printStackTrace();
+        }
+        return "";
     }
 
 }

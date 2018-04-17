@@ -1,5 +1,7 @@
 package graduationdesign.sharedparkingspaces.presenter;
 
+import com.baidu.location.BDLocation;
+
 import graduationdesign.sharedparkingspaces.MainActivity;
 
 /**
@@ -9,4 +11,6 @@ import graduationdesign.sharedparkingspaces.MainActivity;
 public interface IMainPresenter {
     void setView(MainActivity.IMainView view);
     void getUser();
+    void getNearbyParkingLots(BDLocation location);
+    void dispose();
 }
