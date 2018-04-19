@@ -2,7 +2,7 @@
     <string name="app_name">Shared parking spaces</string>
     <string name="please_login">点击我登陆哦</string>
     <string name="all_groups">所有组</string>
-    <string name="user_info">用户信息</string>
+    <string name="user_info">个人信息</string>
     <string name="my_order">我的订单</string>
     <string name="add_us">加入共享</string>
     <string name="about_us">关于我们</string>
@@ -48,9 +48,17 @@
     <string name="yes">是</string>
 
     <!--edit info-->
-    <string name="user_name">用户名</string>
-    <string name="sex">性别</string>
-    <string name="birthday">生日</string>
-    <string name="plate_name">车牌</string>
+    <string name="tel_num">号   码: </string>
+    <string name="user_name">昵       称: </string>
+    <string name="sex">性         别: </string>
+    <string name="birthday">生         日: </string>
+    <string name="plate_name">车         牌: </string>
+    <string name="can_not_edit">不可修改</string>
+    <string name="edit_birth">填写生日</string>
+    <string name="save">保 存</string>
+    <string name="click_to_manage">点击管理</string>
+    <string name="no_user">没有用户</string>
+    <string name="edit_user_name">修改用户名</string>
+    <string name="ok">确定</string>
 
 </resources>

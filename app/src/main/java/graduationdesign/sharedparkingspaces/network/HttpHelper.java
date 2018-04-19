@@ -17,7 +17,7 @@ import okhttp3.ResponseBody;
 
 public class HttpHelper {
     private static final String TAG = "HttpHelper";
-    public static final MediaType JSON
+    private static final MediaType JSON
             = MediaType.parse("application/json; charset=utf-8");
     private OkHttpClient mOkHttpClient;
 
@@ -28,7 +28,7 @@ public class HttpHelper {
         mOkHttpClient = new OkHttpClient();
     }
 
-    public static final HttpHelper getInstance(){
+    public static HttpHelper getInstance(){
         return SingletonHolder.instance;
     }
 
@@ -48,7 +48,6 @@ public class HttpHelper {
     public String post(String url, String json) throws IOException {
         RequestBody body = RequestBody.create(JSON, json);
         Request request = new Request.Builder()
-                .header("Content-Type", "application/json")
                 .url(url)
                 .post(body)
                 .build();

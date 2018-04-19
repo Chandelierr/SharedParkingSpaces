@@ -51,6 +51,7 @@ import graduationdesign.sharedparkingspaces.view.UserInfoActivity;
 import static graduationdesign.sharedparkingspaces.view.LoginActivity.SIGN_IN;
 import static graduationdesign.sharedparkingspaces.view.LoginActivity.SIGN_UP;
 import static graduationdesign.sharedparkingspaces.view.UserInfoActivity.FROM_USER_INFO_ACTIVITY;
+import static graduationdesign.sharedparkingspaces.view.UserInfoActivity.MODIFY_USER_INFO;
 
 public class MainActivity extends RxAppCompatActivity implements
         NavigationView.OnNavigationItemSelectedListener {
@@ -80,6 +81,12 @@ public class MainActivity extends RxAppCompatActivity implements
         if (requestCode == LoginActivity.FROM_LOGIN_ACTIVITY) {
             Log.d(TAG, "result code: " + resultCode);
             if (resultCode == SIGN_IN || resultCode == SIGN_UP) {
+                mPresenter.getUser();
+            }
+        } else if (requestCode == FROM_USER_INFO_ACTIVITY) {
+            Log.d(TAG, "from user info activity");
+            if (resultCode == MODIFY_USER_INFO){
+                Log.d(TAG, "modify user info");
                 mPresenter.getUser();
             }
         }
@@ -217,6 +224,7 @@ public class MainActivity extends RxAppCompatActivity implements
     };
 
     private void initData() {
+        initUser();
         mBaiduMap = mMapView.getMap();
         //描述地图状态将要发生变化  设置地图缩放级别
         MapStatusUpdate msu = MapStatusUpdateFactory.zoomTo(15f);
@@ -244,7 +252,10 @@ public class MainActivity extends RxAppCompatActivity implements
             }
         });
         initLocation();
-//        initMarkers();
+    }
+
+    private void initUser() {
+        mPresenter.getUser();
     }
 
     private void initLocation() {

@@ -60,6 +60,13 @@ public class LoginActivity extends AppCompatActivity {
     private String mPhoneNum;
     private String mPassword;
 
+    private View.OnClickListener mSignUpListener = new View.OnClickListener() {
+        @Override
+        public void onClick(View v) {
+            changeSignUpStatus();
+        }
+    };
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -106,12 +113,7 @@ public class LoginActivity extends AppCompatActivity {
         //其他方式
         mOtherSignWaysView = findViewById(R.id.other_sign_ways);
         mSignUpView = (TextView) findViewById(R.id.sign_up);
-        mSignUpView.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                changeSignUpStatus();
-            }
-        });
+        mSignUpView.setOnClickListener(mSignUpListener);
     }
 
     private void changeSignUpStatus() {
@@ -197,6 +199,16 @@ public class LoginActivity extends AppCompatActivity {
         return password.equals(mPasswordView.getText().toString());
     }
 
+
+    //implement IView===========================================================
+    public interface ILoginView extends IView{
+        int getSignWay();
+        void showProgress(boolean isShow);
+
+        void signSuccess();
+
+        void signResult(int result);
+    }
 
     private ILoginView mView = new ILoginView() {
         @Override
@@ -287,15 +299,6 @@ public class LoginActivity extends AppCompatActivity {
             return getApplicationContext();
         }
     };
-
-    public interface ILoginView extends IView{
-        int getSignWay();
-        void showProgress(boolean isShow);
-
-        void signSuccess();
-
-        void signResult(int result);
-    }
 
 }
 
