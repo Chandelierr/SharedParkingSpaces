@@ -2,6 +2,7 @@ package graduationdesign.sharedparkingspaces.model;
 
 import java.io.Serializable;
 import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Created by wangmengjie on 2018/4/14.
@@ -13,7 +14,7 @@ public class Subscriber implements Serializable{
     private String username;
     private int sex;
     private String birthday;
-    private ArrayList<String> plate_number;
+    private List<String> plate_number;
 
     public Subscriber() {
     }
@@ -38,23 +39,23 @@ public class Subscriber implements Serializable{
         this.password = password;
     }
 
-    public ArrayList<String> getPlateName() {
+    public List<String> getPlateNumber() {
         return plate_number;
     }
 
-    public void setPlateName(ArrayList<String> plateName) {
-        this.plate_number = plateName;
+    public void setPlateNumber(ArrayList<String> plate_number) {
+        this.plate_number = plate_number;
     }
-    public boolean addPlateName(String plate) {
-        if (plate_number == null) {
-            plate_number = new ArrayList<>();
-        }
-        if (plate_number.size() < 10) {
-            plate_number.add(plate);
-            return true;
-        }
-        return false;
-    }
+//    public boolean addPlateName(String plate) {
+//        if (plate_number == null) {
+//            plate_number = new ArrayList<>();
+//        }
+//        if (plate_number.size() < 10) {
+//            plate_number.add(plate);
+//            return true;
+//        }
+//        return false;
+//    }
 
     public int getSex() {
         return sex;

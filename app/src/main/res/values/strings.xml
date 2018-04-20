@@ -60,5 +60,8 @@
     <string name="no_user">没有用户</string>
     <string name="edit_user_name">修改用户名</string>
     <string name="ok">确定</string>
+    <string name="add_plate">添加车牌</string>
+    <string name="plate_manage">车牌管理</string>
+    <string name="plate_invalid">车牌号不符合要求或重复添加</string>
 
 </resources>

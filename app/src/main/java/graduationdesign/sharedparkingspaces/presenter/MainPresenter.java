@@ -141,7 +141,7 @@ public class MainPresenter implements IMainPresenter{
                         int status = response.getIntValue("status");
                         if (status == 0) {
                             JSONArray parks = response.getJSONArray("values");
-                            Log.d("UserInfo", "parks: " + parks.toJSONString());
+                            Log.d(TAG, "parks: " + parks.toJSONString());
                             mLots = JSON.parseArray(parks.toJSONString(), ParkingLot.class);
                         }
                         if (mLots == null) {

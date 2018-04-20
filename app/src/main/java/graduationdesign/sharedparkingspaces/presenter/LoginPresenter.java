@@ -7,7 +7,6 @@ import android.text.TextUtils;
 import android.util.Log;
 
 import com.alibaba.fastjson.JSON;
-import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
 
 import java.io.IOException;
@@ -135,16 +134,19 @@ public class LoginPresenter implements ILoginPresenter{
             mUser = new Subscriber();
             JSONObject values = response.getJSONObject("values");
             if (values != null) {
-                mUser.setUserName(values.getString("username"));
-                mUser.setSex(values.getIntValue("sex"));
-                mUser.setBirthday(values.getString("birthday"));
-                JSONArray plates = values.getJSONArray("plate_name");
-                if (plates != null) {
-                    for (int i = 0; i < plates.size(); i++) {
-                        mUser.addPlateName(plates.getString(i));
-                    }
-                }
+                mUser = JSON.parseObject(values.toJSONString(), Subscriber.class);
             }
+//            if (values != null) {
+//                mUser.setUserName(values.getString("username"));
+//                mUser.setSex(values.getIntValue("sex"));
+//                mUser.setBirthday(values.getString("birthday"));
+//                JSONArray plates = values.getJSONArray("plate_name");
+//                if (plates != null) {
+//                    for (int i = 0; i < plates.size(); i++) {
+//                        mUser.addPlateName(plates.getString(i));
+//                    }
+//                }
+//            }
         }
         Log.d(TAG, "parse status: " + status);
         return status;
@@ -181,7 +183,7 @@ public class LoginPresenter implements ILoginPresenter{
         return 0;
     }
 
-    public static String md5(String string) {
+    private static String md5(String string) {
         if (TextUtils.isEmpty(string)) {
             return "";
         }

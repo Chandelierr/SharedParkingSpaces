@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content">
+    <Button
+        android:id="@+id/add_plate"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_margin="@dimen/dimen_5dp"
+        android:background="@color/colorLightGreen"
+        android:text="@string/add_plate"
+        android:textSize="18sp"
+        android:textColor="@color/color_707070" />
+    <LinearLayout
+        android:id="@+id/fill_in_plate"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_margin="@dimen/dimen_5dp"
+        android:layout_below="@id/add_plate"
+        android:orientation="horizontal"
+        android:visibility="gone">
+        <EditText
+            android:id="@+id/edit_plate"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="5"
+            android:gravity="center"
+            android:textColor="@color/colorLightGreen"/>
+        <Button
+            android:id="@+id/sure_to_add_plate"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:background="@color/colorLightGreen"
+            android:text="@string/ok"
+            android:textColor="@color/color_707070"/>
+    </LinearLayout>
+
+    <android.support.v7.widget.RecyclerView
+        android:id="@+id/plates_recycler"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/fill_in_plate">
+    </android.support.v7.widget.RecyclerView>
+
+</RelativeLayout>

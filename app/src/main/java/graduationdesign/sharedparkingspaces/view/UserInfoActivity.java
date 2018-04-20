@@ -8,6 +8,7 @@ import android.os.Bundle;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
+import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.DatePicker;
@@ -15,6 +16,10 @@ import android.widget.EditText;
 import android.widget.Spinner;
 import android.widget.TextView;
 import android.widget.Toast;
+
+import com.alibaba.fastjson.JSON;
+
+import java.util.List;
 
 import graduationdesign.sharedparkingspaces.MainActivity;
 import graduationdesign.sharedparkingspaces.R;
@@ -94,32 +99,36 @@ public class UserInfoActivity extends AppCompatActivity implements View.OnClickL
     }
     private DatePickerDialog mDateDialog;
     private DatePickerDialog.OnDateSetListener mDateListener;
-    private AlertDialog.Builder mBuilder;
-    private EditText mInputUserName;
+    private AlertDialog.Builder mModifyUserNameBuilder;
+    private AlertDialog.Builder mModifyPlatesBuilder;
+    private List<String> mNewPlates;
 
     @Override
     public void onClick(View v) {
         if (v.getId() == R.id.info_tel) {
             Toast.makeText(this, getResources().getString(R.string.can_not_edit), Toast.LENGTH_SHORT).show();
         } else if (v.getId() == R.id.info_user_name) {
-            if (mBuilder == null) {
-                mBuilder = new AlertDialog.Builder(this);
-                mInputUserName = new EditText(this);
-                mInputUserName.setText(mUserName.getText());
-                mBuilder.setTitle(R.string.edit_user_name)
-                        .setView(mInputUserName)
-                        .setPositiveButton(R.string.ok, new DialogInterface.OnClickListener() {
-                            @Override
-                            public void onClick(DialogInterface dialog, int which) {
-                                String input = mInputUserName.getText().toString();
-                                mUserName.setText(input);
-                                dialog.dismiss();
-                            }
-                        })
+            Log.d(TAG, "user name click");
+            final EditText inputName = new EditText(this);
+            inputName.setText(mUserName.getText());
+            if (mModifyUserNameBuilder == null) {
+                mModifyUserNameBuilder = new AlertDialog.Builder(this);
+                mModifyUserNameBuilder.setTitle(R.string.edit_user_name)
                         .setNegativeButton(R.string.back, null);
             }
-            mBuilder.show();
+            mModifyUserNameBuilder
+                    .setView(inputName)
+                    .setPositiveButton(R.string.ok, new DialogInterface.OnClickListener() {
+                        @Override
+                        public void onClick(DialogInterface dialog, int which) {
+                            String input = inputName.getText().toString();
+                            mUserName.setText(input);
+                            dialog.dismiss();
+                        }
+                    })
+                    .create().show();
         } else if (v.getId() == R.id.info_birthday) {
+            Log.d(TAG, "birthday click");
             if (mDateListener == null) {
                 mDateListener = new DatePickerDialog.OnDateSetListener() {
                     @Override
@@ -133,14 +142,33 @@ public class UserInfoActivity extends AppCompatActivity implements View.OnClickL
             }
             mDateDialog.show();
         } else if (v.getId() == R.id.info_plates) {
-            Toast.makeText(this, "正在开发中", Toast.LENGTH_SHORT).show();
+            Log.d(TAG, "plate manage click");
+            final PlateManageView plateView = new PlateManageView(this);
+            plateView.setPlatesData(mUser.getPlateNumber());;
+            if (mModifyPlatesBuilder == null) {
+                mModifyPlatesBuilder = new AlertDialog.Builder(this);
+                mModifyPlatesBuilder.setTitle(R.string.plate_manage);
+            }
+            mModifyPlatesBuilder.setView(plateView)
+                    .setNegativeButton(R.string.back, new DialogInterface.OnClickListener() {
+                        @Override
+                        public void onClick(DialogInterface dialog, int which) {
+                            mNewPlates = plateView.getData();
+                        }
+                    })
+                    .create()
+                    .show();
         } else if (v.getId() == R.id.save) {
+            Log.d(TAG, "plates list: " + mNewPlates);
+            Log.d(TAG, "plate to json:" + JSON.toJSONString(mNewPlates));
+            String newBirth = mBirthday.getText().toString().equals(getResources().getString(R.string.edit_birth)) ? null : mBirthday.getText().toString();
             String newInfo = "{" +
                     "\"tel\":" + "\"" + mUser.getTel() + "\"," +
                     "\"username\":" + "\"" + mUserName.getText().toString() + "\"," +
                     "\"sex\":" + "\"" + (mSex.getSelectedItemPosition() + 1) + "\"," +
-                    "\"birthday\":" + "\"" + mBirthday.getText() + "\"," +
-                    "\"plate_number\":" + "\"" + mUser.getPlateName() + "\"}";
+                    "\"birthday\":" + "\"" + newBirth + "\"," +
+                    "\"plate_number\":" + JSON.toJSONString(mNewPlates) + "}";
+            Log.d(TAG, "newInfo: " + newInfo);
             mPresenter.changeUserInfo(newInfo);
         }
     }
